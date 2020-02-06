@@ -30,21 +30,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     CanvasView canvasView;
     private String filename = "ImageDoodle.jpg";
     private String filepath = "Canvas_Doodle";
-    File myExternalFile;
+    File mImageFile;
     public static final int PICK_IMAGE = 1;
 
     Bitmap canvasBitmap;
     Bitmap saveBitmap;
+    ImageView mImageViewGallery;
+    Bitmap mGalleryBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         init();
-        canvasView = findViewById(R.id.draw);
     }
 
     private void init() {
+        canvasView = findViewById(R.id.draw);
+        mImageViewGallery = findViewById(R.id.imageView);
         Button saveButton = findViewById(R.id.save_button);
         Button clearButton = findViewById(R.id.clear_button);
         saveButton.setOnClickListener(this);
@@ -52,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (!isExternalStorageAvailable() || isExternalStorageReadOnly()) {
             saveButton.setEnabled(false);
         } else {
-            myExternalFile = new File(getExternalFilesDir(filepath), filename);
+            mImageFile = new File(getExternalFilesDir(filepath), filename);
         }
     }
 
@@ -61,9 +64,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.save_button:
                 try {
-                    FileOutputStream fileOutputStream = new FileOutputStream(myExternalFile);
-                    System.out.println(fileOutputStream);
-                    canvasBitmap = canvasView.getBitmap();
+                    FileOutputStream fileOutputStream = new FileOutputStream(mImageFile);
+                    if (mGalleryBitmap == null) {
+                        canvasBitmap = canvasView.getBitmap();
+                    } else {
+                        canvasBitmap = overlay(canvasView.getBitmap(), overlay(mGalleryBitmap, canvasView.getBitmap()));
+                    }
                     saveBitmap = Bitmap.createBitmap(320, 480, Bitmap.Config.ARGB_8888);
                     Paint paint = new Paint();
                     paint.setColor(Color.WHITE);
@@ -73,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (saveBitmap == null) {
                         System.out.println("NULL bitmap save\n");
                     }
-                    saveBitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream);
+                    saveBitmap.compress(Bitmap.CompressFormat.PNG, 0, fileOutputStream);
                     showMessage("File saved successfully!");
                     fileOutputStream.close();
                 } catch (FileNotFoundException e) {
@@ -87,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.clear_button:
                 canvasView.clear();
+                mImageViewGallery.setImageBitmap(null);
                 break;
         }
     }
@@ -141,15 +148,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null && data.getData() != null) {
             Uri uri = data.getData();
             try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                ImageView imageView = findViewById(R.id.imageView);
-                imageView.setImageBitmap(bitmap);
-                
+                mGalleryBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                mImageViewGallery.setImageBitmap(mGalleryBitmap);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public Bitmap overlay(Bitmap bitmap1, Bitmap bitmap2) {
+        try {
+            int maxWidth = (bitmap1.getWidth() > bitmap2.getWidth() ? bitmap1.getWidth() : bitmap2.getWidth());
+            int maxHeight = (bitmap1.getHeight() > bitmap2.getHeight() ? bitmap1.getHeight() : bitmap2.getHeight());
+            Bitmap bmOverlay = Bitmap.createBitmap(maxWidth, maxHeight, bitmap1.getConfig());
+            canvasView.getCanvas().setBitmap(bmOverlay);
+            canvasView.getCanvas().drawBitmap(bitmap1, 0, 0, null);
+            canvasView.getCanvas().drawBitmap(bitmap2, 0, 0, null);
+            return bmOverlay;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (saveBitmap != null) {
+            saveBitmap.recycle();
+            saveBitmap = null;
+        }
+        if (canvasBitmap != null) {
+            canvasBitmap.recycle();
+            canvasBitmap = null;
+        }
+        super.onDestroy();
     }
 }
 

@@ -11,8 +11,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 public class CanvasView extends View {
-    public Bitmap mBitmapToSave;
-    public Canvas mCanvas;
+    private Bitmap mBitmapToSave;
+    private Canvas mCanvas;
     private Path mPath;
     private Paint mBitmapPaint;
     private Paint mPaint;
@@ -20,21 +20,23 @@ public class CanvasView extends View {
     private float mY;
     private static final float TOUCH_MARGIN_FACTOR = 4;
 
-
     public CanvasView(Context c, AttributeSet attrs) {
         super(c, attrs);
+        init();
+    }
+
+    public void init(){
         mPath = new Path();
         mBitmapPaint = new Paint(Paint.DITHER_FLAG);
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setDither(true);
-        mPaint.setColor(0xFF000000);
+        mPaint.setColor(Color.BLACK);
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
         mPaint.setStrokeCap(Paint.Cap.ROUND);
         mPaint.setStrokeWidth(9);
     }
-
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -49,14 +51,14 @@ public class CanvasView extends View {
         canvas.drawPath(mPath, mPaint);
     }
 
-    private void touch_start(float x, float y) {
+    private void handleDownEvent(float x, float y) {
         mPath.reset();
         mPath.moveTo(x, y);
         mX = x;
         mY = y;
     }
 
-    private void touch_move(float x, float y) {
+    private void handleMoveEvent(float x, float y) {
         float dx = Math.abs(x - mX);
         float dy = Math.abs(y - mY);
         if (dx >= TOUCH_MARGIN_FACTOR || dy >= TOUCH_MARGIN_FACTOR) {
@@ -66,7 +68,7 @@ public class CanvasView extends View {
         }
     }
 
-    private void touch_up() {
+    private void handleUpEvent() {
         mPath.lineTo(mX, mY);
         mCanvas.drawPath(mPath, mPaint);
         mPath.reset();
@@ -78,15 +80,15 @@ public class CanvasView extends View {
         float y = event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                touch_start(x, y);
+                handleDownEvent(x, y);
                 invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
-                touch_move(x, y);
+                handleMoveEvent(x, y);
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
-                touch_up();
+                handleUpEvent();
                 invalidate();
                 break;
         }
@@ -94,18 +96,19 @@ public class CanvasView extends View {
     }
 
     public Bitmap getBitmap() {
-        //this.measure(100, 100);
-        //this.layout(0, 0, 100, 100);
-        this.setDrawingCacheEnabled(true);
-        this.buildDrawingCache();
-        Bitmap bitmap = Bitmap.createBitmap(this.getDrawingCache());
-        this.setDrawingCacheEnabled(false);
+        setDrawingCacheEnabled(true);
+        buildDrawingCache();
+        Bitmap bitmap = Bitmap.createBitmap(getDrawingCache());
+//        setDrawingCacheEnabled(false);
         return bitmap;
     }
 
     public void clear() {
         mBitmapToSave.eraseColor(Color.WHITE);
         invalidate();
-        System.gc();
+    }
+
+    public Canvas getCanvas() {
+        return mCanvas;
     }
 }

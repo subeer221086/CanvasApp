@@ -4,15 +4,16 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true" />
+
     <com.example.canvas.CanvasView
         android:id="@+id/draw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"></com.example.canvas.CanvasView>"
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
 
     <LinearLayout
         android:layout_width="match_parent"
