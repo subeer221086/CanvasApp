@@ -99,7 +99,7 @@ public class CanvasView extends View {
         setDrawingCacheEnabled(true);
         buildDrawingCache();
         Bitmap bitmap = Bitmap.createBitmap(getDrawingCache());
-//        setDrawingCacheEnabled(false);
+        setDrawingCacheEnabled(false);
         return bitmap;
     }
 
